@@ -4,6 +4,7 @@ import calendar
 import json
 import s3fs
 import io
+import matplotlib.pyplot as plt
 
 DATA_BUCKET_NAME = os.environ['DATA_BUCKET_NAME']
 
@@ -57,13 +58,14 @@ def generate_chart(df, line, title, path):
     fig = ax.get_figure()
     img_data = io.BytesIO()
     fig.savefig(img_data, format='png')
+    plt.close(fig)
     img_data.seek(0)
 
     year = df['BETRIEBSTAG'].dt.year.values[0]
     month = df['BETRIEBSTAG'].dt.month.values[0]
 
     s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    with s3.open(f"{path}{year}/{month}_sti_thun_bahnhof.png", 'wb') as f:
+    with s3.open(f"{path}{year}/{month}_{line}_sti_thun_bahnhof.png", 'wb') as f:
         f.write(img_data.getbuffer())
 
 def generate_chart_for_all_lines(df, title, path):
@@ -79,9 +81,9 @@ def handler(event, context):
     month = event["detail"]["object"]["key"].split("/")[2]
 
     s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    files = s3.find(f"s3://{bucket_name}/actual-data/{year}/{month}")
+    files = s3.glob(f"s3://{bucket_name}/actual-data/{year}/{month}/*.csv")
 
-    print(f"s3://{bucket_name}/actual-data/{year}/{month}")
+    print(f"s3://{bucket_name}/actual-data/{year}/{month}/*.csv")
     print(files)
 
     df = read_csv_files(f"s3://",files)

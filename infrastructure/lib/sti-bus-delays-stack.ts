@@ -57,8 +57,8 @@ export class StiBusDelaysStack extends cdk.Stack {
             bundling: {
                 assetExcludes: ['.venv'],
             },
-            timeout: cdk.Duration.seconds(15),
-            memorySize: 256,
+            timeout: cdk.Duration.seconds(90),
+            memorySize: 320,
             environment: {
                 DATA_BUCKET_NAME: dataBucket.bucketName,
                 MPLCONFIGDIR: "/tmp/matplotlib"
@@ -82,8 +82,7 @@ export class StiBusDelaysStack extends cdk.Stack {
                     },
                     object: {
                         key: [
-                            {prefix: "actual-data/"},
-                            {suffix: ".csv"}
+                            {wildcard: "actual-data/*/*.csv"}
                         ]
                     }
                 }
