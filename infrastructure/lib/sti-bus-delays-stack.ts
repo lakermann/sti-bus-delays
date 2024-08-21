@@ -29,7 +29,9 @@ export class StiBusDelaysStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(30),
             memorySize: 3072,
             environment: {
-                DATA_BUCKET_NAME: dataBucket.bucketName
+                DATASET_URL: "https://opentransportdata.swiss/de/dataset/istdaten/permalink",
+                OUTPUT_PATH: `s3://${dataBucket.bucketName}/actual-data`,
+                OUTPUT_FILE_NAME: "sti_thun_bahnhof.csv"
             }
         });
 
