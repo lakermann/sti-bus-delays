@@ -2,7 +2,7 @@ import json
 import os
 import pandas as pd
 
-DATASET_URL = os.environ['DATASET_URL']
+DEFAULT_DATASET_URL = os.environ['DEFAULT_DATASET_URL']
 OUTPUT_PATH = os.environ['OUTPUT_PATH']
 OUTPUT_FILE_NAME = os.environ['OUTPUT_FILE_NAME']
 
@@ -56,7 +56,8 @@ def save_csv(df):
 
 
 def handler(event, context):
-    actual_df = get_actual_data(DATASET_URL)
+    dataset_url = event.get('dataset-url', DEFAULT_DATASET_URL)
+    actual_df = get_actual_data(dataset_url)
     processed_df = process_data(actual_df)
     path = save_csv(processed_df)
     return {

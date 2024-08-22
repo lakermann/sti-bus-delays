@@ -65,7 +65,7 @@ def generate_chart(df, line, title, path):
     month = df['BETRIEBSTAG'].dt.month.values[0]
 
     s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    with s3.open(f"{path}{year}/{month}_{line}_sti_thun_bahnhof.png", 'wb') as f:
+    with s3.open(f"{path}Linie {line}/{year}/{month}_sti_thun_bahnhof.png", 'wb') as f:
         f.write(img_data.getbuffer())
 
 def generate_chart_for_all_lines(df, title, path):
