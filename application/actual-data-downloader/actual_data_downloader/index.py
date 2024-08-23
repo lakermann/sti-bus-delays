@@ -2,10 +2,6 @@ import json
 import os
 import pandas as pd
 
-DEFAULT_DATASET_URL = os.environ['DEFAULT_DATASET_URL']
-OUTPUT_PATH = os.environ['OUTPUT_PATH']
-OUTPUT_FILE_NAME = os.environ['OUTPUT_FILE_NAME']
-
 
 def get_actual_data(url):
     df = pd.read_csv(url,
@@ -45,10 +41,10 @@ def process_data(df):
             .sort_values(by='ANKUNFTSZEIT'))
 
 
-def save_csv(df):
+def save_csv(df, output_path, file_name):
     subpath = df['BETRIEBSTAG'].iloc[0].strftime('%Y/%m')
     date = df['BETRIEBSTAG'].iloc[0].strftime('%Y-%m-%d')
-    path = f"{OUTPUT_PATH}/{subpath}/{date}_{OUTPUT_FILE_NAME}"
+    path = f"{output_path}/{subpath}/{date}_{file_name}"
     df.to_csv(path,
               sep=';',
               index=False)
@@ -56,10 +52,15 @@ def save_csv(df):
 
 
 def handler(event, context):
-    dataset_url = event.get('dataset-url', DEFAULT_DATASET_URL)
+    default_dataset_url = os.getenv('DEFAULT_DATASET_URL')
+    output_path = os.getenv('OUTPUT_PATH')
+    file_name = os.getenv('OUTPUT_FILE_NAME')
+    dataset_url = event.get('dataset-url', default_dataset_url)
+
     actual_df = get_actual_data(dataset_url)
     processed_df = process_data(actual_df)
-    path = save_csv(processed_df)
+    path = save_csv(processed_df, output_path, file_name)
+
     return {
         'statusCode': 200,
         'headers': {

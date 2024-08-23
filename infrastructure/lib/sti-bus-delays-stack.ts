@@ -21,10 +21,12 @@ export class StiBusDelaysStack extends cdk.Stack {
 
         const actualDataDownloaderFunction = new PythonFunction(this, 'actual-data-downloader', {
             description: 'Actual data downloader',
-            entry: '../application/src/actual-data-downloader',
+            entry: '../application/actual-data-downloader',
+            index: 'actual_data_downloader/index.py',
             runtime: lambda.Runtime.PYTHON_3_9,
             bundling: {
-                assetExcludes: ['.venv'],
+                assetExcludes: ['*.iml', '.pytest_cache', 'tests'],
+                poetryIncludeHashes: true
             },
             timeout: cdk.Duration.seconds(30),
             memorySize: 3072,
@@ -42,7 +44,7 @@ export class StiBusDelaysStack extends cdk.Stack {
             bundling: {
                 assetExcludes: ['.venv'],
             },
-            timeout: cdk.Duration.seconds(10),
+            timeout: cdk.Duration.seconds(20),
             memorySize: 256,
             environment: {
                 DATA_BUCKET_NAME: dataBucket.bucketName,

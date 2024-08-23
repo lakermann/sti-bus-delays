@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "actual-data-downloader"
+version = "0.1.0"
+description = "Download actual data and save to csv file"
+authors = ["Lukas Akermann"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^2.2.2"
+fsspec = "^2024.6.1"
+s3fs = "^2024.6.1"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.2"
+pytest-env = "^1.1.3"
+
+[tool.pytest_env]
+DEFAULT_DATASET_URL = 'https://opentransportdata.swiss/de/dataset/istdaten/permalink'
+OUTPUT_PATH = 's3://sti-bus-delays/actual-data'
+OUTPUT_FILE_NAME = 'sti_thun_bahnhof.csv'
+FSSPEC_S3_ENDPOINT_URL = 'http://localhost:9000'
+FSSPEC_S3_KEY = 'minio'
+FSSPEC_S3_SECRET = 'minio123'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

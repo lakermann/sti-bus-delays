@@ -1,8 +1,6 @@
 import os
 import pandas as pd
-import matplotlib
 import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import json
 import io
 import s3fs
@@ -29,25 +27,23 @@ def generate_chart(df, path):
                                   values=['AN_VERSPAETUNG_MIN'],
                                   aggfunc="max")
 
-    year = df['BETRIEBSTAG'].dt.year.values[0]
-    month = df['BETRIEBSTAG'].dt.month.values[0]
-    date = df['BETRIEBSTAG'].dt.date.values[0]
-
+    timestamp = df['BETRIEBSTAG'].iloc[0]
+    #date = df['BETRIEBSTAG'].dt.date.values[0]
     ax=pivot_table_df.plot(linestyle='none',
                            marker='o',
                            figsize=(15, 8),
-                           title=f"Verspätungen der STI Busse am Bahnhof Thun - {date.strftime('%d.%m.%Y')} ({date.strftime('%a')})"
+                           title=f"STI Bus delays at 'Bahnhof Thun' station - {timestamp.strftime('%d.%m.%Y')} ({timestamp.strftime('%a')})",
                            )
 
-    ax.set_xlabel("ANKUNFTSZEIT GEMÄSS FAHRPLAN")
-    ax.set_ylabel("VERSPÄTUNG (MIN)")
-    ax.legend(["Linie " + str(s2) for (s1,s2) in pivot_table_df.columns.tolist()])
+    ax.set_xlabel("Arrival Time according to Timetable")
+    ax.set_ylabel("Delay in Minutes")
+    ax.legend(["Route " + str(s2) for (s1,s2) in pivot_table_df.columns.tolist()])
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax.tick_params(axis='x', labelrotation=45)
     ax.set_ybound(lower=0, upper=90)
 
     fig = ax.get_figure()
-    fig.text(0.9, 0.04, 'Datenquelle: https://opentransportdata.swiss/de/dataset/istdaten/',
+    fig.text(0.9, 0.04, 'Data source: https://opentransportdata.swiss/de/dataset/istdaten/',
              horizontalalignment='right',
              verticalalignment='bottom')
 
@@ -55,8 +51,19 @@ def generate_chart(df, path):
     fig.savefig(img_data, format='png')
     img_data.seek(0)
 
+    #year = df['BETRIEBSTAG'].iloc[0].year
+    #month = df['BETRIEBSTAG'].iloc[0].month
+    #date = df['BETRIEBSTAG'].iloc[0].strftime('%Y-%m-%d')
+    ##year = df['BETRIEBSTAG'].dt.year.values[0]
+    #month = df['BETRIEBSTAG'].dt.month.values[0]
+
+    subpath = df['BETRIEBSTAG'].iloc[0].strftime('%Y/%m')
+    date = df['BETRIEBSTAG'].iloc[0].strftime('%Y-%m-%d')
+    path = f"{path}{subpath}/{date}_sti_thun_bahnhof.png"
+
+
     s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    with s3.open(f"{path}{year}/{month}/{date}_sti_thun_bahnhof.png", 'wb') as f:
+    with s3.open(path, 'wb') as f:
         f.write(img_data.getbuffer())
 
 def handler(event, context):
@@ -67,16 +74,6 @@ def handler(event, context):
 
     df = read_csv(f"s3://{bucket_name}/{object_key}")
     generate_chart(df, f"s3://{bucket_name}/daily-charts/")
-
-    # for record in event['Records']:
-    #     print(record["s3"]["bucket"]["name"])
-    #     print(record["s3"]["object"]["key"])
-    #
-    #     bucket_name = record["s3"]["bucket"]["name"]
-    #     object_key = record["s3"]["object"]["key"]
-    #
-    #     df = read_csv(f"s3://{bucket_name}/{object_key}")
-    #     generate_chart(df, f"s3://{bucket_name}/daily-charts/")
 
     return {
         'statusCode': 200,

@@ -1,4 +1,7 @@
 .idea
 *.iml
 
-.venv
+datastore/.minio.sys
+datastore/sti-bus-delays
+
+infrastructure/cdk.out
