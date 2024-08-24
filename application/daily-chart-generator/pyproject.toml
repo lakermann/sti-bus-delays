@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "daily-chart-generator"
+version = "0.1.0"
+description = "Generate a daily chart"
+authors = ["Lukas Akermann"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^2.2.2"
+fsspec = "^2024.6.1"
+s3fs = "^2024.6.1"
+matplotlib = "^3.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

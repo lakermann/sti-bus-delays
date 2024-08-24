@@ -39,10 +39,12 @@ export class StiBusDelaysStack extends cdk.Stack {
 
         const dailyChartGeneratorFunction = new PythonFunction(this, 'daily-chart-generator', {
             description: 'Daily chart generator',
-            entry: '../application/src/daily-chart-generator',
+            entry: '../application/daily-chart-generator',
+            index: 'daily_chart_generator/index.py',
             runtime: lambda.Runtime.PYTHON_3_9,
             bundling: {
-                assetExcludes: ['.venv'],
+                assetExcludes: ['*.iml', '.pytest_cache', 'tests'],
+                poetryIncludeHashes: true
             },
             timeout: cdk.Duration.seconds(20),
             memorySize: 256,
@@ -54,10 +56,12 @@ export class StiBusDelaysStack extends cdk.Stack {
 
         const monthlyChartGeneratorFunction = new PythonFunction(this, 'monthly-chart-generator', {
             description: 'Monthly chart generator',
-            entry: '../application/src/monthly-chart-generator',
+            entry: '../application/monthly-chart-generator',
+            index: 'monthly_chart_generator/index.py',
             runtime: lambda.Runtime.PYTHON_3_9,
             bundling: {
-                assetExcludes: ['.venv'],
+                assetExcludes: ['*.iml', '.pytest_cache', 'tests'],
+                poetryIncludeHashes: true
             },
             timeout: cdk.Duration.seconds(180),
             memorySize: 320,
