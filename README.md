@@ -24,7 +24,24 @@ cd infrastructure
 cdk deploy
 ```
 
-## Lambda Development
+### Infrastructure Development
+
+Install dependencies:
+
+```shell
+cd infrastructure
+npm install
+```
+
+Run tests:
+
+```shell
+cd infrastructure
+npm run build
+npm run test
+```
+
+## Application Development
 
 Prerequisites:
 - Homebrew (package manager for macOS)

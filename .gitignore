@@ -4,4 +4,9 @@
 datastore/.minio.sys
 datastore/sti-bus-delays
 
+infrastructure/node_modules
 infrastructure/cdk.out
+infrastructure/.cdk.staging
+infrastructure/**/*.js
+infrastructure/!jest.config.js
+infrastructure/**/*.d.ts
