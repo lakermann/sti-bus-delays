@@ -7,7 +7,7 @@ def test_handle_event_without_dataset_url():
 
     assert http_response['statusCode'] == 200
     assert http_response['headers']['Content-Type'] == 'application/json'
-    assert json.loads(http_response['body'])['message'].startswith('Actual data saved in ')
+    assert json.loads(http_response['body'])['message'] == 'Actual data saved'
 
 
 def test_handle_event_with_custom_dataset_url():
@@ -19,4 +19,4 @@ def test_handle_event_with_custom_dataset_url():
 
     assert http_response['statusCode'] == 200
     assert http_response['headers']['Content-Type'] == 'application/json'
-    assert json.loads(http_response['body'])['message'].startswith('Actual data saved in ')
+    assert json.loads(http_response['body'])['message'] == 'Actual data saved'

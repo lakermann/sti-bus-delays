@@ -75,11 +75,25 @@ Run minio (local object storage):
 docker compose up -d
 ```
 
-Run tests (for each application):
+Run all tests (for each application):
 
 ```shell
 cd application/actual-data-downloader
-poetry run pytest
+poetry run pytest 
+```
+
+Run unit tests (for each application):
+
+```shell
+cd application/actual-data-downloader
+poetry run pytest tests/unit
+```
+
+Run integration tests (for each application):
+
+```shell
+cd application/actual-data-downloader
+poetry run pytest tests/integration
 ```
 
 Access to minio:

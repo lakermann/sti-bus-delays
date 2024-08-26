@@ -1,5 +1,6 @@
 import json
 import os
+
 import pandas as pd
 
 
@@ -41,14 +42,34 @@ def process_data(df):
             .sort_values(by='ANKUNFTSZEIT'))
 
 
-def save_csv(df, output_path, file_name):
-    subpath = df['BETRIEBSTAG'].iloc[0].strftime('%Y/%m')
-    date = df['BETRIEBSTAG'].iloc[0].strftime('%Y-%m-%d')
-    path = f"{output_path}/{subpath}/{date}_{file_name}"
-    df.to_csv(path,
+def get_dataset_day(df):
+    return df['BETRIEBSTAG'].iloc[0]
+
+
+def generate_path(path, timestamp):
+    return f"{path}/{timestamp.strftime('%Y/%m')}"
+
+
+def generate_filename(timestamp, file_name):
+    date = timestamp.strftime('%Y-%m-%d')
+    return f"{date}_{file_name}"
+
+
+def save_csv(df, path, file_name):
+    file_path = f"{path}/{file_name}"
+    df.to_csv(file_path,
               sep=';',
               index=False)
-    return path
+    return file_path
+
+
+def load_and_save_as_csv(dataset_url, output_path, file_name):
+    actual_df = get_actual_data(dataset_url)
+    processed_df = process_data(actual_df)
+    dataset_day = get_dataset_day(processed_df)
+    path = generate_path(output_path, dataset_day)
+    file_name = generate_filename(dataset_day, file_name)
+    return save_csv(processed_df, path, file_name)
 
 
 def handler(event, context):
@@ -57,9 +78,7 @@ def handler(event, context):
     file_name = os.getenv('OUTPUT_FILE_NAME')
     dataset_url = event.get('dataset-url', default_dataset_url)
 
-    actual_df = get_actual_data(dataset_url)
-    processed_df = process_data(actual_df)
-    path = save_csv(processed_df, output_path, file_name)
+    path = load_and_save_as_csv(dataset_url, output_path, file_name)
 
     return {
         'statusCode': 200,
@@ -67,6 +86,7 @@ def handler(event, context):
             'Content-Type': 'application/json'
         },
         'body': json.dumps({
-            'message': f"Actual data saved in {path}."
+            'message': 'Actual data saved',
+            'path': path
         })
     }
