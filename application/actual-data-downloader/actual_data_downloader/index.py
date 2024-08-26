@@ -52,7 +52,7 @@ def generate_path(path, timestamp):
 
 def generate_filename(timestamp, file_name):
     date = timestamp.strftime('%Y-%m-%d')
-    return f"{date}_{file_name}"
+    return f"{date}_{file_name}.csv"
 
 
 def save_csv(df, path, file_name):

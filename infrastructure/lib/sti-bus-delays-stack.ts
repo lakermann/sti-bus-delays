@@ -33,7 +33,7 @@ export class StiBusDelaysStack extends cdk.Stack {
             environment: {
                 DEFAULT_DATASET_URL: "https://opentransportdata.swiss/de/dataset/istdaten/permalink",
                 OUTPUT_PATH: `s3://${dataBucket.bucketName}/actual-data`,
-                OUTPUT_FILE_NAME: "sti_thun_bahnhof.csv"
+                OUTPUT_FILE_NAME: "sti_thun_bahnhof"
             }
         });
 
@@ -49,7 +49,8 @@ export class StiBusDelaysStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(20),
             memorySize: 256,
             environment: {
-                DATA_BUCKET_NAME: dataBucket.bucketName,
+                OUTPUT_PATH: `s3://${dataBucket.bucketName}/daily-charts`,
+                OUTPUT_FILE_NAME: "sti_thun_bahnhof",
                 MPLCONFIGDIR: "/tmp/matplotlib"
             }
         });

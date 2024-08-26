@@ -104,7 +104,7 @@ def test_generate_path():
 
 
 def test_generate_filename():
-    actual_filename = generate_filename(pd.Timestamp('2024-08-23 00:00:00'), 'test.csv')
+    actual_filename = generate_filename(pd.Timestamp('2024-08-23 00:00:00'), 'test')
 
     assert actual_filename == '2024-08-23_test.csv'
 
@@ -126,6 +126,6 @@ def test_save_csv(csv_data_folder):
 def test_load_and_save_as_csv(csv_data_folder):
     os.makedirs(f"{csv_data_folder}/2024/08", exist_ok=True)
 
-    path = load_and_save_as_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), csv_data_folder, "test.csv")
+    path = load_and_save_as_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), csv_data_folder, "test")
 
     assert path == f"{csv_data_folder}/2024/08/2024-08-23_test.csv"
