@@ -22,9 +22,8 @@ def read_csv(path, csv_file_path):
     df['BETRIEBSTAG'] = pd.to_datetime(df['BETRIEBSTAG'])
     df['ANKUNFTSZEIT'] = pd.to_datetime(df['ANKUNFTSZEIT'])
     df['ANKUNFTSZEIT_TIME'] = pd.to_datetime(df['ANKUNFTSZEIT']).dt.floor(freq='60min').dt.strftime('%H')
-    df['WOCHENTAG'] = pd.to_datetime(df['ANKUNFTSZEIT']).dt.strftime('%a')
-    df['WOCHENTAG'] = pd.Categorical(df['WOCHENTAG'], categories=list(day_abbr), ordered=True)
-    df['WOCHENTAG_NUMMER'] = pd.to_datetime(df['ANKUNFTSZEIT']).dt.strftime('%u')
+    df['WOCHENTAG'] = pd.Categorical(pd.to_datetime(df['ANKUNFTSZEIT']).dt.strftime('%a'),
+                                     categories=list(day_abbr), ordered=True)
     return df
 
 
@@ -36,22 +35,21 @@ def read_csv_files(path, csv_file_path_list):
     return pd.concat(data)
 
 
-def generate_chart(df, line, title, path, file_name):
+def generate_chart(df, line, path, file_name):
     df1 = df.query(f"LINIEN_TEXT == '{line}'")
     fig, axes = plt.subplots(3, 3, sharex=False, sharey=True)
     fig.delaxes(axes.flatten()[7])
     fig.delaxes(axes.flatten()[8])
     fig.set_size_inches(15, 10)
 
-    startDate = df['ANKUNFTSZEIT'].min()
-    endDate = df['ANKUNFTSZEIT'].max()
+    start_date = df['ANKUNFTSZEIT'].min()
+    end_date = df['ANKUNFTSZEIT'].max()
 
-    i = 0
-    for d in df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique():
-        subplot_ax = (axes.flatten())[i]
-        daily_df = df1.query(f"WOCHENTAG == '{d}'")
+    for idx, day in enumerate(df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique()):
+        subplot_ax = (axes.flatten())[idx]
+        daily_df = df1.query(f"WOCHENTAG == '{day}'")
 
-        bp_dict = daily_df.boxplot(
+        daily_df.boxplot(
             column=['AN_VERSPAETUNG_MIN'],
             by=['ANKUNFTSZEIT_TIME'],
             ax=subplot_ax,
@@ -61,12 +59,9 @@ def generate_chart(df, line, title, path, file_name):
 
         labels = daily_df.sort_values(by=['ANKUNFTSZEIT_TIME'], ascending=True)['ANKUNFTSZEIT_TIME'].unique()
         subplot_ax.set_xticklabels(labels)
-
-        subplot_ax.set_title(f"{d}")
-        # subplot_ax.set_ybound(lower=0, upper=90)
+        subplot_ax.set_title(f"{day}")
         subplot_ax.set_xlabel('Arrival Time according to Timetable')
         subplot_ax.set_ylabel("Delay in Minutes")
-        i += 1
 
     fig.text(0.9, 0.04, 'Data source: https://opentransportdata.swiss/de/dataset/istdaten/',
              horizontalalignment='right',
@@ -75,7 +70,7 @@ def generate_chart(df, line, title, path, file_name):
 
     plt.subplots_adjust(wspace=0.25, hspace=0.5)
     plt.suptitle(
-        f"STI Bus delays at 'Bahnhof Thun' station \n Route {line} ({startDate.strftime('%d.%m.%Y')} - {endDate.strftime('%d.%m.%Y')})",
+        f"STI Bus delays at 'Bahnhof Thun' station \n Route {line} ({start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')})",
         fontsize=15)
 
     img_data = io.BytesIO()
@@ -87,13 +82,13 @@ def generate_chart(df, line, title, path, file_name):
     month = df['BETRIEBSTAG'].dt.month.values[0]
 
     s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    with s3.open(f"{path}/Linie {line}/{year}/{month}_sti_thun_bahnhof.png", 'wb') as f:
+    with s3.open(f"{path}/Linie {line}/{year}/{month}_{file_name}", 'wb') as f:
         f.write(img_data.getbuffer())
 
 
-def generate_chart_for_all_lines(df, title, path, file_name):
-    for line in df['LINIEN_TEXT'].unique():
-        generate_chart(df, line, title, path, file_name)
+def generate_chart_for_all_routes(df, path, file_name):
+    for route in df['LINIEN_TEXT'].unique():
+        generate_chart(df, route, path, file_name)
 
 
 def read_all_files_for_month(bucket_name, year, month):
@@ -105,7 +100,7 @@ def read_all_files_for_month(bucket_name, year, month):
 def read_all_files_for_month_and_generate_charts(bucket_name, year, month, output_path, file_name):
     read_all_files_for_month(bucket_name, year, month)
     df = read_all_files_for_month(bucket_name, year, month, )
-    generate_chart_for_all_lines(df, "blubr", f"s3://{output_path}", file_name)
+    generate_chart_for_all_routes(df, f"s3://{output_path}", file_name)
 
 
 def handler(event, context):
