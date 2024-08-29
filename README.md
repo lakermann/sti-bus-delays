@@ -1,20 +1,32 @@
 # STI Bus Delays
 
-## Actual data downloader
+## Application
 
-Event JSON to download the dataset from a custom dataset URL:
+### Actual data downloader
 
-```json
-{
-  "dataset-url": "https://opentransportdata.swiss/dataset/0edc74a3-ad4d-486e-8657-f8f3b34a0979/resource/19095461-4ded-4678-9c9b-442ae3a834d3/download/2024-08-18_istdaten.csv"
-}
-```
+- [Source Code](application/actual-data-downloader/actual_data_downloader/index.py)
+- [Integration Test](application/actual-data-downloader/tests/integration/test_index.py)
+
+### Daily chart generator
+
+- [Source Code](application/daily-chart-generator/daily_chart_generator/index.py)
+- [Integration Test](application/daily-chart-generator/tests/integration/test_index.py)
+
+### Monthly chart generator
+
+- [Source Code](application/monthly-chart-generator/monthly_chart_generator/index.py)
+- [Integration Test](application/monthly-chart-generator/tests/integration/test_index.py)
+
+## Infrastructure
+
+- [Source Code](infrastructure/lib/sti-bus-delays-stack.ts)
 
 ## Deployment
 
 Prerequisites:
+
 - AWS CLI, Typescript & AWS CDK CLI
-  - <https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html>
+    - <https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html>
 - Docker
 
 Deploy stack to your default AWS account/region:
@@ -44,8 +56,9 @@ npm run test
 ## Application Development
 
 Prerequisites:
+
 - Homebrew (package manager for macOS)
-  - <https://brew.sh/>
+    - <https://brew.sh/>
 
 Install pipx:
 
@@ -67,7 +80,7 @@ cd application/actual-data-downloader
 poetry install
 ```
 
-### Run tests 
+### Run tests
 
 Run minio (local object storage):
 
@@ -97,6 +110,7 @@ poetry run pytest tests/integration
 ```
 
 Access to minio:
+
 - URL: <http://localhost:9001/>
 - Username: minio
 - Password: minio123
