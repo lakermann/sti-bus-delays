@@ -8,8 +8,8 @@ import pandas as pd
 import s3fs
 
 
-def read_csv(path, csv_file_path):
-    df = pd.read_csv(f"{path}{csv_file_path}",
+def read_csv(filepath_or_buffer):
+    df = pd.read_csv(filepath_or_buffer,
                      sep=";",
                      dtype={'BETRIEBSTAG': str,
                             'LINIEN_TEXT': str,
@@ -21,7 +21,7 @@ def read_csv(path, csv_file_path):
 
     df['BETRIEBSTAG'] = pd.to_datetime(df['BETRIEBSTAG'])
     df['ANKUNFTSZEIT'] = pd.to_datetime(df['ANKUNFTSZEIT'])
-    df['ANKUNFTSZEIT_TIME'] = pd.to_datetime(df['ANKUNFTSZEIT']).dt.floor(freq='60min').dt.strftime('%H')
+    df['ANKUNFTSZEIT_GERUNDED_STUNDE'] = df['ANKUNFTSZEIT'].dt.floor(freq='60min').dt.strftime('%H')
     df['WOCHENTAG'] = pd.Categorical(pd.to_datetime(df['ANKUNFTSZEIT']).dt.strftime('%a'),
                                      categories=list(day_abbr), ordered=True)
     return df
@@ -30,7 +30,7 @@ def read_csv(path, csv_file_path):
 def read_csv_files(path, csv_file_path_list):
     data = []
     for file in csv_file_path_list:
-        data.append(read_csv(path, file))
+        data.append(read_csv(f"{path}{file}"))
 
     return pd.concat(data)
 
@@ -42,8 +42,8 @@ def generate_chart(df, line, path, file_name):
     fig.delaxes(axes.flatten()[8])
     fig.set_size_inches(15, 10)
 
-    start_date = df['ANKUNFTSZEIT'].min()
-    end_date = df['ANKUNFTSZEIT'].max()
+    start_date = df['BETRIEBSTAG'].min()
+    end_date = df['BETRIEBSTAG'].max()
 
     for idx, day in enumerate(df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique()):
         subplot_ax = (axes.flatten())[idx]
@@ -51,13 +51,13 @@ def generate_chart(df, line, path, file_name):
 
         daily_df.boxplot(
             column=['AN_VERSPAETUNG_MIN'],
-            by=['ANKUNFTSZEIT_TIME'],
+            by=['ANKUNFTSZEIT_GERUNDED_STUNDE'],
             ax=subplot_ax,
             return_type='both',
             patch_artist=True,
         )
 
-        labels = daily_df.sort_values(by=['ANKUNFTSZEIT_TIME'], ascending=True)['ANKUNFTSZEIT_TIME'].unique()
+        labels = daily_df.sort_values(by=['ANKUNFTSZEIT_GERUNDED_STUNDE'], ascending=True)['ANKUNFTSZEIT_GERUNDED_STUNDE'].unique()
         subplot_ax.set_xticklabels(labels)
         subplot_ax.set_title(f"{day}")
         subplot_ax.set_xlabel('Arrival Time according to Timetable')
