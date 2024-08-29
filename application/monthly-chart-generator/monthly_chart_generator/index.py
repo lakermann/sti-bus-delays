@@ -27,13 +27,10 @@ def read_csv(filepath_or_buffer):
     return df
 
 
-def read_csv_files(path, csv_file_path_list):
-    data = []
-    for file in csv_file_path_list:
-        data.append(read_csv(f"{path}{file}"))
-
-    return pd.concat(data)
-
+def read_csv_files(file_path_list, protocol=""):
+    return pd.concat(
+        [read_csv(f"{protocol}{file}") for file in file_path_list]
+    )
 
 def generate_chart(df, line, path, file_name):
     df1 = df.query(f"LINIEN_TEXT == '{line}'")
@@ -94,7 +91,7 @@ def generate_chart_for_all_routes(df, path, file_name):
 def read_all_files_for_month(bucket_name, year, month):
     s3 = s3fs.S3FileSystem(anon=False)
     files = s3.glob(f"s3://{bucket_name}/actual-data/{year}/{month}/*.csv")
-    return read_csv_files(f"s3://", files)
+    return read_csv_files(files, "s3://")
 
 
 def read_all_files_for_month_and_generate_charts(bucket_name, year, month, output_path, file_name):

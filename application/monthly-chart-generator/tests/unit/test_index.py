@@ -1,12 +1,17 @@
 from io import StringIO
 
 import pandas as pd
+import pytest
 
-from monthly_chart_generator.index import read_csv
+from monthly_chart_generator.index import read_csv, read_csv_files
 
 DELAYED_STI_THUN_STATION_CSV = """BETRIEBSTAG;FAHRT_BEZEICHNER;LINIEN_TEXT;ANKUNFTSZEIT;AN_VERSPAETUNG_MIN
-2024-08-23;85:146:170903-02196-1;1;2024-08-23 06:46;1"""
+    2024-08-23;85:146:170903-02196-1;1;2024-08-23 06:46;1"""
 
+@pytest.fixture(scope='function')
+def temp_data_folder(tmp_path_factory):
+    fn = tmp_path_factory.mktemp('test')
+    return fn
 
 def test_read_csv():
     actual_df = read_csv(StringIO(DELAYED_STI_THUN_STATION_CSV))
@@ -17,3 +22,14 @@ def test_read_csv():
     assert actual_df['FAHRT_BEZEICHNER'].iloc[0] == '85:146:170903-02196-1'
     assert actual_df['ANKUNFTSZEIT_GERUNDED_STUNDE'].iloc[0] == '06'
     assert actual_df['WOCHENTAG'].iloc[0] == 'Fri'
+
+
+def test_read_csv_files(temp_data_folder):
+    file_path1 = f"{temp_data_folder}/test1.csv"
+    file_path2 = f"{temp_data_folder}/test2.csv"
+    pd.read_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), sep=';').to_csv(file_path1, sep=';', index=False)
+    pd.read_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), sep=';').to_csv(file_path2, sep=';', index=False)
+
+    actual_pd = read_csv_files([file_path1, file_path2])
+
+    assert len(actual_pd.index) == 2
