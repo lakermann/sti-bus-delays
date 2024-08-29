@@ -1,0 +1,37 @@
+@startuml Hello World
+!$AWS_DARK = true
+
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v18.0/dist
+!include AWSPuml/AWSCommon.puml
+
+!include AWSPuml/AWSSimplified.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/General/Servers.puml
+!include AWSPuml/Compute/Lambda.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/ApplicationIntegration/EventBridge.puml
+
+title "Overview"
+left to right direction
+
+Servers(opentransportdata, "opentransportdata", "actual data")
+
+AWSCloudGroup(cloud) {
+    Lambda(actualDataDownloader, "Actual Data Downloader", "")
+    SimpleStorageService(storage, "Storage", "")
+    EventBridge(eventBridge, "Event Bus", "")
+    Lambda(dailyChartGenerator, "Daily Chart Generator", "")
+    Lambda(monthlyChartGenerator, "Monthly Chart Generator", "")
+
+    eventBridge --> actualDataDownloader: 1. Triggers daily
+    actualDataDownloader --> storage: 3. Saves actual data in
+    storage --> eventBridge: 4. Creates object created event
+    eventBridge --> dailyChartGenerator: 5a. Triggers
+    eventBridge --> monthlyChartGenerator: 5b. Triggers
+    dailyChartGenerator --> storage: 6a. Saves daily chart in
+    monthlyChartGenerator --> storage: 6b. Saves monthly chart in
+}
+
+opentransportdata <-- actualDataDownloader: 2. Loads actual data from
+
+@enduml

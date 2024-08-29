@@ -1,23 +1,37 @@
 # STI Bus Delays
 
+![overview](doc/img/overview.png)
+
 ## Application
 
-### Actual data downloader
+### Actual Data Downloader
+
+AWS Lambda application (daily triggered) that downloads a csv file with actual data from
+opentransportdata and saves it in an S3 bucket.
 
 - [Source Code](application/actual-data-downloader/actual_data_downloader/index.py)
 - [Integration Test](application/actual-data-downloader/tests/integration/test_index.py)
 
-### Daily chart generator
+### Daily Chart Generator
+
+AWS Lambda application (triggered by an object created event) that processes a daily csv file and generates a daily
+chart as png and saves it in an S3 bucket.
 
 - [Source Code](application/daily-chart-generator/daily_chart_generator/index.py)
 - [Integration Test](application/daily-chart-generator/tests/integration/test_index.py)
 
-### Monthly chart generator
+### Monthly Chart Generator
+
+AWS Lambda application (triggered by an object created event) that processes all csv files of the month and
+generates a monthly
+chart as png and saves it in an S3 bucket.
 
 - [Source Code](application/monthly-chart-generator/monthly_chart_generator/index.py)
 - [Integration Test](application/monthly-chart-generator/tests/integration/test_index.py)
 
 ## Infrastructure
+
+The infrastructure is defined and provisioned (including the applications)  using the AWS Cloud Development Kit (CDK)
 
 - [Source Code](infrastructure/lib/sti-bus-delays-stack.ts)
 
@@ -26,7 +40,6 @@
 Prerequisites:
 
 - AWS CLI, Typescript & AWS CDK CLI
-    - <https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html>
 - Docker
 
 Deploy stack to your default AWS account/region:
@@ -58,7 +71,6 @@ npm run test
 Prerequisites:
 
 - Homebrew (package manager for macOS)
-    - <https://brew.sh/>
 
 Install pipx:
 
