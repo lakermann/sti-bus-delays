@@ -67,7 +67,8 @@ export class StiBusDelaysStack extends cdk.Stack {
             timeout: cdk.Duration.seconds(180),
             memorySize: 320,
             environment: {
-                DATA_BUCKET_NAME: dataBucket.bucketName,
+                OUTPUT_PATH: `s3://${dataBucket.bucketName}/monthly-charts`,
+                OUTPUT_FILE_NAME: "sti_thun_bahnhof",
                 MPLCONFIGDIR: "/tmp/matplotlib"
             }
         });
