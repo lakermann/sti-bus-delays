@@ -18,18 +18,24 @@ Servers(opentransportdata, "opentransportdata", "actual data")
 
 AWSCloudGroup(cloud) {
     Lambda(actualDataDownloader, "Actual Data Downloader", "")
-    SimpleStorageService(storage, "Storage", "")
+    SimpleStorageService(actualDataStorage, "Storage", "")
     EventBridge(eventBridge, "Event Bus", "")
-    Lambda(dailyChartGenerator, "Daily Chart Generator", "")
     Lambda(monthlyChartGenerator, "Monthly Chart Generator", "")
+    Lambda(dailyChartGenerator, "Daily Chart Generator", "")
+    SimpleStorageService(dailyChartStorage, "Storage", "")
+    SimpleStorageService(monthlyChartStorage, "Storage", "")
 
     eventBridge --> actualDataDownloader: 1. Triggers daily
-    actualDataDownloader --> storage: 3. Saves actual data in
-    storage --> eventBridge: 4. Creates object created event
-    eventBridge --> dailyChartGenerator: 5a. Triggers
-    eventBridge --> monthlyChartGenerator: 5b. Triggers
-    dailyChartGenerator --> storage: 6a. Saves daily chart in
-    monthlyChartGenerator --> storage: 6b. Saves monthly chart in
+    actualDataDownloader -> actualDataStorage: 3. Saves actual data in
+    actualDataStorage -> eventBridge: 4. Creates object created event in
+
+    eventBridge --> dailyChartGenerator: 5. Triggers
+    actualDataStorage <-- dailyChartGenerator: 6. Gets actual data from
+    dailyChartGenerator --> dailyChartStorage: 7. Saves daily chart in
+
+    eventBridge --> monthlyChartGenerator: 8. Triggers
+    actualDataStorage <-- monthlyChartGenerator: 9 Gets actual data from
+    monthlyChartGenerator --> monthlyChartStorage: 10. Saves monthly chart in
 }
 
 opentransportdata <-- actualDataDownloader: 2. Loads actual data from
