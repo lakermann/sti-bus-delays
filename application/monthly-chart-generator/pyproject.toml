@@ -7,9 +7,10 @@ authors = ["Lukas Akermann"]
 [tool.poetry.dependencies]
 python = "^3.9"
 pandas = "^2.2.2"
-fsspec = "^2024.6.1"
-s3fs = "^2024.6.1"
 matplotlib = "^3.9.2"
+universal-pathlib = "^0.2.3"
+typing-extensions = "^4.12.2"
+s3fs = "^2024.6.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.2"

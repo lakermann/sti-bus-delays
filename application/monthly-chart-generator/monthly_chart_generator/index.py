@@ -3,9 +3,42 @@ import json
 import os
 from calendar import day_abbr
 
+import fsspec
 import matplotlib.pyplot as plt
 import pandas as pd
-import s3fs
+from upath import UPath
+
+
+def handler(event, context):
+    output_path = os.getenv('OUTPUT_PATH')
+    output_file_name = os.getenv('OUTPUT_FILE_NAME')
+
+    bucket_name = event["detail"]["bucket"]["name"]
+    path = os.path.dirname(event["detail"]["object"]["key"])
+
+    output_file_path_list = read_all_files_in_input_path_and_generate_charts(f"s3://{bucket_name}/{path}", output_path,
+                                                                             output_file_name)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps({
+            'message': 'Monthly charts generated',
+            'path': output_file_path_list
+        })
+    }
+
+
+def read_all_files_in_input_path_and_generate_charts(input_path, output_path, output_file_name):
+    df = read_all_csv_files(input_path)
+    return [generate_chart(df, route, output_path, output_file_name) for route in df['LINIEN_TEXT'].unique()]
+
+
+def read_all_csv_files(input_path):
+    upath = UPath(input_path)
+    files = upath.glob("*.csv")
+    return pd.concat(
+        [read_csv(f"{file}") for file in files]
+    )
 
 
 def read_csv(filepath_or_buffer):
@@ -27,26 +60,21 @@ def read_csv(filepath_or_buffer):
     return df
 
 
-def read_csv_files(file_path_list, protocol=""):
-    return pd.concat(
-        [read_csv(f"{protocol}{file}") for file in file_path_list]
-    )
+def generate_chart(df, route, output_path, output_file_name):
+    start_date = df['BETRIEBSTAG'].min()
+    end_date = df['BETRIEBSTAG'].max()
 
-def generate_chart(df, line, path, file_name):
-    df1 = df.query(f"LINIEN_TEXT == '{line}'")
+    delays_per_route_df = df.query(f"LINIEN_TEXT == '{route}'")
     fig, axes = plt.subplots(3, 3, sharex=False, sharey=True)
     fig.delaxes(axes.flatten()[7])
     fig.delaxes(axes.flatten()[8])
     fig.set_size_inches(15, 10)
 
-    start_date = df['BETRIEBSTAG'].min()
-    end_date = df['BETRIEBSTAG'].max()
-
-    for idx, day in enumerate(df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique()):
+    for idx, day in enumerate(delays_per_route_df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique()):
         subplot_ax = (axes.flatten())[idx]
-        daily_df = df1.query(f"WOCHENTAG == '{day}'")
+        delays_per_route_per_day_df = delays_per_route_df.query(f"WOCHENTAG == '{day}'")
 
-        daily_df.boxplot(
+        delays_per_route_per_day_df.boxplot(
             column=['AN_VERSPAETUNG_MIN'],
             by=['ANKUNFTSZEIT_GERUNDED_STUNDE'],
             ax=subplot_ax,
@@ -54,11 +82,13 @@ def generate_chart(df, line, path, file_name):
             patch_artist=True,
         )
 
-        labels = daily_df.sort_values(by=['ANKUNFTSZEIT_GERUNDED_STUNDE'], ascending=True)['ANKUNFTSZEIT_GERUNDED_STUNDE'].unique()
-        subplot_ax.set_xticklabels(labels)
         subplot_ax.set_title(f"{day}")
+        labels = delays_per_route_per_day_df.sort_values(by=['ANKUNFTSZEIT_GERUNDED_STUNDE'], ascending=True)[
+            'ANKUNFTSZEIT_GERUNDED_STUNDE'].unique()
+        subplot_ax.set_xticklabels(labels)
         subplot_ax.set_xlabel('Arrival Time according to Timetable')
         subplot_ax.set_ylabel("Delay in Minutes")
+        subplot_ax.set_ylim(bottom=0)
 
     fig.text(0.9, 0.04, 'Data source: https://opentransportdata.swiss/de/dataset/istdaten/',
              horizontalalignment='right',
@@ -67,7 +97,7 @@ def generate_chart(df, line, path, file_name):
 
     plt.subplots_adjust(wspace=0.25, hspace=0.5)
     plt.suptitle(
-        f"STI Bus delays at 'Bahnhof Thun' station \n Route {line} ({start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')})",
+        f"STI Bus delays at 'Bahnhof Thun' station \n Route {route} ({start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')})",
         fontsize=15)
 
     img_data = io.BytesIO()
@@ -78,42 +108,7 @@ def generate_chart(df, line, path, file_name):
     year = df['BETRIEBSTAG'].dt.year.values[0]
     month = df['BETRIEBSTAG'].dt.month.values[0]
 
-    s3 = s3fs.S3FileSystem(anon=False)  # Uses default credentials
-    with s3.open(f"{path}/Linie {line}/{year}/{month}_{file_name}", 'wb') as f:
+    with fsspec.open(f"{output_path}/route {route}/{year}/{month}_{output_file_name}.png", 'wb') as f:
         f.write(img_data.getbuffer())
 
-
-def generate_chart_for_all_routes(df, path, file_name):
-    for route in df['LINIEN_TEXT'].unique():
-        generate_chart(df, route, path, file_name)
-
-
-def read_all_files_for_month(bucket_name, year, month):
-    s3 = s3fs.S3FileSystem(anon=False)
-    files = s3.glob(f"s3://{bucket_name}/actual-data/{year}/{month}/*.csv")
-    return read_csv_files(files, "s3://")
-
-
-def read_all_files_for_month_and_generate_charts(bucket_name, year, month, output_path, file_name):
-    read_all_files_for_month(bucket_name, year, month)
-    df = read_all_files_for_month(bucket_name, year, month, )
-    generate_chart_for_all_routes(df, f"s3://{output_path}", file_name)
-
-
-def handler(event, context):
-    output_path = os.getenv('OUTPUT_PATH')
-    file_name = os.getenv('OUTPUT_FILE_NAME')
-
-    bucket_name = event["detail"]["bucket"]["name"]
-    year = event["detail"]["object"]["key"].split("/")[1]
-    month = event["detail"]["object"]["key"].split("/")[2]
-
-    read_all_files_for_month_and_generate_charts(bucket_name, year, month, output_path, file_name)
-
-    return {
-        'statusCode': 200,
-        'body': json.dumps({
-            'message': 'Monthly charts generated',
-            'path': 'tbd'
-        })
-    }
+    return f"{output_path}/route {route}/{year}/{month}_{output_file_name}.png"
