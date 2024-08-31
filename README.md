@@ -94,7 +94,7 @@ poetry install
 
 ### Run tests
 
-Run minio (local object storage):
+Run minio (local object storage for integration tests):
 
 ```shell
 docker compose up -d
