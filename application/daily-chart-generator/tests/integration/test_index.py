@@ -1,12 +1,14 @@
-from daily_chart_generator.index import handler
 import json
-import fsspec
 import os
+
+import fsspec
+
+from daily_chart_generator.index import handler
 
 
 def test_handle_event():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, "test-data.csv")
+    file_path = os.path.join(script_dir, 'test-data.csv')
     with open(file_path, 'rb') as file_in:
         with fsspec.open('s3://sti-bus-delays/actual-data/test-data.csv', 'wb') as file_out:
             file_out.write(file_in.read())

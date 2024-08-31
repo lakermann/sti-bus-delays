@@ -64,6 +64,7 @@ def test_generate_chart(temp_data_folder):
 
 def test_generate_filepath():
     timestamp = pd.Timestamp('2024-08-23')
+
     actual_filepath = generate_filepath('path', timestamp, 'filename', '1')
 
     assert actual_filepath == 'path/route-1/2024/2024-08_route-1_filename.png'
