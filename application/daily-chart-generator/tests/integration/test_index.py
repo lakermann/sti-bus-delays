@@ -13,7 +13,7 @@ def test_handle_event():
         with fsspec.open('s3://sti-bus-delays/actual-data/test-data.csv', 'wb') as file_out:
             file_out.write(file_in.read())
 
-    http_response = handler({
+    actual_http_response = handler({
         'detail': {
             'bucket': {
                 'name': 'sti-bus-delays'
@@ -24,6 +24,9 @@ def test_handle_event():
         }
     }, {})
 
-    assert http_response['statusCode'] == 200
-    assert http_response['headers']['Content-Type'] == 'application/json'
-    assert json.loads(http_response['body'])['message'] == 'Daily chart generated'
+    assert actual_http_response['statusCode'] == 200
+    assert actual_http_response['headers']['Content-Type'] == 'application/json'
+    body = json.loads(actual_http_response['body'])
+    assert body['message'] == 'Daily chart generated'
+    assert body['path'].startswith('s3://sti-bus-delays/daily-charts/')
+    assert body['path'].endswith('.png')

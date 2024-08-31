@@ -13,7 +13,7 @@ def handler(event, context):
     object_key = event['detail']['object']['key']
     output_path = os.getenv('OUTPUT_PATH')
     file_name = os.getenv('OUTPUT_FILE_NAME')
-    path = read_csv_and_generate_chart(f"s3://{bucket_name}/{object_key}", f"s3://{output_path}", file_name)
+    path = read_csv_and_generate_chart(f"s3://{bucket_name}/{object_key}", output_path, file_name)
 
     return {
         'statusCode': 200,

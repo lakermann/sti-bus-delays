@@ -21,6 +21,9 @@ def handler(event, context):
 
     return {
         'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json'
+        },
         'body': json.dumps({
             'message': 'Monthly charts generated',
             'path': output_file_path_list
