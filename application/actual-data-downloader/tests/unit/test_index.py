@@ -1,10 +1,10 @@
+import os
 from io import StringIO
 
 import pandas as pd
 import pytest
-import os
 
-from actual_data_downloader.index import get_actual_data, process_data, save_csv, generate_path, generate_filename, \
+from actual_data_downloader.index import get_actual_data, process_data, save_csv, generate_filepath, \
     get_dataset_day, load_and_save_as_csv
 
 DELAYED_STI_THUN_STATION_DF = pd.DataFrame(
@@ -19,6 +19,20 @@ DELAYED_STI_THUN_STATION_DF = pd.DataFrame(
 
 DELAYED_STI_THUN_STATION_CSV = """BETRIEBSTAG;FAHRT_BEZEICHNER;BETREIBER_ID;BETREIBER_ABK;BETREIBER_NAME;PRODUKT_ID;LINIEN_ID;LINIEN_TEXT;UMLAUF_ID;VERKEHRSMITTEL_TEXT;ZUSATZFAHRT_TF;FAELLT_AUS_TF;BPUIC;HALTESTELLEN_NAME;ANKUNFTSZEIT;AN_PROGNOSE;AN_PROGNOSE_STATUS;ABFAHRTSZEIT;AB_PROGNOSE;AB_PROGNOSE_STATUS;DURCHFAHRT_TF;AN_VERSPAETUNG_MIN
     23.08.2024;85:146:170903-02196-1;85:146;STI;STI Bus AG;Bus;85:146:1;1;15;B;false;false;8507180;Thun, Bahnhof;23.08.2024 06:46;23.08.2024 06:47:00;REAL;23.08.2024 06:49;23.08.2024 06:46:54;REAL;false"""
+
+
+@pytest.fixture(scope='function')
+def temp_data_folder(tmp_path_factory):
+    fn = tmp_path_factory.mktemp('test')
+    return fn
+
+
+def test_load_and_save_as_csv(temp_data_folder):
+    os.makedirs(f"{temp_data_folder}/2024/08", exist_ok=True)
+
+    path = load_and_save_as_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), temp_data_folder, "test")
+
+    assert path == f"{temp_data_folder}/2024/08/2024-08-23_test.csv"
 
 
 def test_get_actual_data():
@@ -54,7 +68,7 @@ def test_process_data():
     assert actual_df['AN_VERSPAETUNG_MIN'].iloc[0] == 1
 
 
-def test_operator_not_sti():
+def test_process_data_operator_not_sti():
     operator_not_sti_df = DELAYED_STI_THUN_STATION_DF.copy()
     operator_not_sti_df['BETREIBER_ABK'] = 'NOT_STI'
 
@@ -63,7 +77,7 @@ def test_operator_not_sti():
     assert len(actual_df.index) == 0
 
 
-def test_arrival_forecast_not_real():
+def test_process_data_arrival_forecast_not_real():
     arrival_forecast_not_real_df = DELAYED_STI_THUN_STATION_DF.copy()
     arrival_forecast_not_real_df['AN_PROGNOSE_STATUS'] = 'NOT_REAL'
 
@@ -72,7 +86,7 @@ def test_arrival_forecast_not_real():
     assert len(actual_df.index) == 0
 
 
-def test_arrival_not_before_forecast():
+def test_process_data_arrival_not_before_forecast():
     arrival_not_before_forecast = DELAYED_STI_THUN_STATION_DF.copy()
     arrival_not_before_forecast['AN_PROGNOSE'] = pd.Timestamp('2024-08-23 06:46:00'),
     arrival_not_before_forecast['ANKUNFTSZEIT'] = pd.Timestamp('2024-08-23 06:47:00')
@@ -82,7 +96,7 @@ def test_arrival_not_before_forecast():
     assert len(actual_df.index) == 0
 
 
-def test_station_not_thun_station():
+def test_process_data_station_not_thun_station():
     station_not_thun_station = DELAYED_STI_THUN_STATION_DF.copy()
     station_not_thun_station['HALTESTELLEN_NAME'] = 'Not Thun, Bahnhof'
 
@@ -97,35 +111,18 @@ def test_get_dataset_day():
     assert actual_dataset_day == pd.Timestamp('2024-08-23 00:00:00')
 
 
-def test_generate_path():
-    actual_path = generate_path('path', pd.Timestamp('2024-08-23 00:00:00'))
+def test_generate_filepath():
+    timestamp = pd.Timestamp('2024-08-23')
 
-    assert actual_path == 'path/2024/08'
-
-
-def test_generate_filename():
-    actual_filename = generate_filename(pd.Timestamp('2024-08-23 00:00:00'), 'test')
-
-    assert actual_filename == '2024-08-23_test.csv'
+    actual_filepath = generate_filepath('path', timestamp, 'filename')
+    print(actual_filepath)
+    assert actual_filepath == 'path/2024/08/2024-08-23_filename.csv'
 
 
-@pytest.fixture(scope='session')
-def csv_data_folder(tmp_path_factory):
-    fn = tmp_path_factory.mktemp('csv_data')
-    return fn
+def test_save_csv(temp_data_folder):
+    os.makedirs(f"{temp_data_folder}/2024/08")
+    print(f"{temp_data_folder}/2024/08")
 
+    path = save_csv(DELAYED_STI_THUN_STATION_DF, f"{temp_data_folder}/2024/08/2024-08-23_test.csv")
 
-def test_save_csv(csv_data_folder):
-    os.makedirs(f"{csv_data_folder}/2024/08", exist_ok=True)
-
-    path = save_csv(DELAYED_STI_THUN_STATION_DF, f"{csv_data_folder}/2024/08", "2024-08-23_test.csv")
-
-    assert path == f"{csv_data_folder}/2024/08/2024-08-23_test.csv"
-
-
-def test_load_and_save_as_csv(csv_data_folder):
-    os.makedirs(f"{csv_data_folder}/2024/08", exist_ok=True)
-
-    path = load_and_save_as_csv(StringIO(DELAYED_STI_THUN_STATION_CSV), csv_data_folder, "test")
-
-    assert path == f"{csv_data_folder}/2024/08/2024-08-23_test.csv"
+    assert path == f"{temp_data_folder}/2024/08/2024-08-23_test.csv"

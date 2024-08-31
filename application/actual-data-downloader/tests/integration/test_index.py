@@ -1,13 +1,17 @@
-from actual_data_downloader.index import handler
 import json
+
+from actual_data_downloader.index import handler
 
 
 def test_handle_event_without_dataset_url():
-    http_response = handler({}, {})
+    actual_http_response = handler({}, {})
 
-    assert http_response['statusCode'] == 200
-    assert http_response['headers']['Content-Type'] == 'application/json'
-    assert json.loads(http_response['body'])['message'] == 'Actual data saved'
+    assert actual_http_response['statusCode'] == 200
+    assert actual_http_response['headers']['Content-Type'] == 'application/json'
+    body = json.loads(actual_http_response['body'])
+    assert body['message'] == 'Actual data saved'
+    assert body['path'].startswith('s3://sti-bus-delays/actual-data/')
+    assert body['path'].endswith('.csv')
 
 
 def test_handle_event_with_custom_dataset_url():
@@ -15,8 +19,11 @@ def test_handle_event_with_custom_dataset_url():
         'dataset-url': 'https://opentransportdata.swiss/de/dataset/istdaten/permalink'
     }
 
-    http_response = handler(event, {})
+    actual_http_response = handler(event, {})
 
-    assert http_response['statusCode'] == 200
-    assert http_response['headers']['Content-Type'] == 'application/json'
-    assert json.loads(http_response['body'])['message'] == 'Actual data saved'
+    assert actual_http_response['statusCode'] == 200
+    assert actual_http_response['headers']['Content-Type'] == 'application/json'
+    body = json.loads(actual_http_response['body'])
+    assert body['message'] == 'Actual data saved'
+    assert body['path'].startswith('s3://sti-bus-delays/actual-data/')
+    assert body['path'].endswith('.csv')

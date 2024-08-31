@@ -16,7 +16,7 @@ def test_handle_event():
         with fsspec.open('s3://sti-bus-delays/actual-data/2024/08/2024-08-25-test-data.csv', 'wb') as file_out:
             file_out.write(file_in.read())
 
-    http_response = handler({
+    actual_http_response = handler({
         'detail': {
             'bucket': {
                 'name': 'sti-bus-delays'
@@ -27,8 +27,8 @@ def test_handle_event():
         }
     }, {})
 
-    assert http_response['statusCode'] == 200
-    body = json.loads(http_response['body'])
+    assert actual_http_response['statusCode'] == 200
+    body = json.loads(actual_http_response['body'])
     assert body['message'] == 'Monthly charts generated'
     assert body['path'] == ['s3://sti-bus-delays/monthly-charts/route-1/2024/2024-08_route-1_sti-thun-bahnhof.png',
                             's3://sti-bus-delays/monthly-charts/route-5/2024/2024-08_route-5_sti-thun-bahnhof.png',

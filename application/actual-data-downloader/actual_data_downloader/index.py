@@ -4,6 +4,34 @@ import os
 import pandas as pd
 
 
+def handler(event, context):
+    default_dataset_url = os.getenv('DEFAULT_DATASET_URL')
+    output_path = os.getenv('OUTPUT_PATH')
+    file_name = os.getenv('OUTPUT_FILE_NAME')
+    dataset_url = event.get('dataset-url', default_dataset_url)
+
+    path = load_and_save_as_csv(dataset_url, output_path, file_name)
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json'
+        },
+        'body': json.dumps({
+            'message': 'Actual data saved',
+            'path': path
+        })
+    }
+
+
+def load_and_save_as_csv(dataset_url, output_path, file_name):
+    actual_df = get_actual_data(dataset_url)
+    processed_df = process_data(actual_df)
+    dataset_day = get_dataset_day(processed_df)
+    path = generate_filepath(output_path, dataset_day, file_name)
+    return save_csv(processed_df, path)
+
+
 def get_actual_data(url):
     df = pd.read_csv(url,
                      sep=';',
@@ -46,47 +74,14 @@ def get_dataset_day(df):
     return df['BETRIEBSTAG'].iloc[0]
 
 
-def generate_path(path, timestamp):
-    return f"{path}/{timestamp.strftime('%Y/%m')}"
-
-
-def generate_filename(timestamp, file_name):
+def generate_filepath(path, timestamp, file_name):
+    year_month = timestamp.strftime('%Y/%m')
     date = timestamp.strftime('%Y-%m-%d')
-    return f"{date}_{file_name}.csv"
+    return f"{path}/{year_month}/{date}_{file_name}.csv"
 
 
-def save_csv(df, path, file_name):
-    file_path = f"{path}/{file_name}"
-    df.to_csv(file_path,
+def save_csv(df, path):
+    df.to_csv(path,
               sep=';',
               index=False)
-    return file_path
-
-
-def load_and_save_as_csv(dataset_url, output_path, file_name):
-    actual_df = get_actual_data(dataset_url)
-    processed_df = process_data(actual_df)
-    dataset_day = get_dataset_day(processed_df)
-    path = generate_path(output_path, dataset_day)
-    file_name = generate_filename(dataset_day, file_name)
-    return save_csv(processed_df, path, file_name)
-
-
-def handler(event, context):
-    default_dataset_url = os.getenv('DEFAULT_DATASET_URL')
-    output_path = os.getenv('OUTPUT_PATH')
-    file_name = os.getenv('OUTPUT_FILE_NAME')
-    dataset_url = event.get('dataset-url', default_dataset_url)
-
-    path = load_and_save_as_csv(dataset_url, output_path, file_name)
-
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json'
-        },
-        'body': json.dumps({
-            'message': 'Actual data saved',
-            'path': path
-        })
-    }
+    return path
