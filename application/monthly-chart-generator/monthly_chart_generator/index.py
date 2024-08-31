@@ -13,8 +13,8 @@ def handler(event, context):
     output_path = os.getenv('OUTPUT_PATH')
     output_file_name = os.getenv('OUTPUT_FILE_NAME')
 
-    bucket_name = event["detail"]["bucket"]["name"]
-    path = os.path.dirname(event["detail"]["object"]["key"])
+    bucket_name = event['detail']['bucket']['name']
+    path = os.path.dirname(event['detail']['object']['key'])
 
     output_file_path_list = read_all_files_in_input_path_and_generate_charts(f"s3://{bucket_name}/{path}", output_path,
                                                                              output_file_name)
@@ -35,15 +35,15 @@ def read_all_files_in_input_path_and_generate_charts(input_path, output_path, ou
 
 def read_all_csv_files(input_path):
     upath = UPath(input_path)
-    files = upath.glob("*.csv")
+    files = upath.glob('*.csv')
     return pd.concat(
-        [read_csv(f"{file}") for file in files]
+        [read_csv(file) for file in files]
     )
 
 
 def read_csv(filepath_or_buffer):
     df = pd.read_csv(filepath_or_buffer,
-                     sep=";",
+                     sep=';',
                      dtype={'BETRIEBSTAG': str,
                             'LINIEN_TEXT': str,
                             'ANKUNFTSZEIT': str,
@@ -66,12 +66,13 @@ def generate_chart(df, route, output_path, output_file_name):
 
     delays_per_route_df = df.query(f"LINIEN_TEXT == '{route}'")
     fig, axes = plt.subplots(3, 3, sharex=False, sharey=True)
-    fig.delaxes(axes.flatten()[7])
-    fig.delaxes(axes.flatten()[8])
+    flatten_axes = axes.flatten()
+    fig.delaxes(flatten_axes[7])
+    fig.delaxes(flatten_axes[8])
     fig.set_size_inches(15, 10)
 
     for idx, day in enumerate(delays_per_route_df.sort_values(by=['WOCHENTAG'], ascending=True)['WOCHENTAG'].unique()):
-        subplot_ax = (axes.flatten())[idx]
+        subplot_ax = flatten_axes[idx]
         delays_per_route_per_day_df = delays_per_route_df.query(f"WOCHENTAG == '{day}'")
 
         delays_per_route_per_day_df.boxplot(
@@ -82,12 +83,12 @@ def generate_chart(df, route, output_path, output_file_name):
             patch_artist=True,
         )
 
-        subplot_ax.set_title(f"{day}")
+        subplot_ax.set_title(day)
         labels = delays_per_route_per_day_df.sort_values(by=['ANKUNFTSZEIT_GERUNDED_STUNDE'], ascending=True)[
             'ANKUNFTSZEIT_GERUNDED_STUNDE'].unique()
         subplot_ax.set_xticklabels(labels)
         subplot_ax.set_xlabel('Arrival Time according to Timetable')
-        subplot_ax.set_ylabel("Delay in Minutes")
+        subplot_ax.set_ylabel('Delay in Minutes')
         subplot_ax.set_ylim(bottom=0)
 
     fig.text(0.9, 0.04, 'Data source: https://opentransportdata.swiss/de/dataset/istdaten/',
@@ -105,10 +106,13 @@ def generate_chart(df, route, output_path, output_file_name):
     plt.close(fig)
     img_data.seek(0)
 
-    year = df['BETRIEBSTAG'].dt.year.values[0]
-    month = df['BETRIEBSTAG'].dt.month.values[0]
-
-    with fsspec.open(f"{output_path}/route {route}/{year}/{month}_{output_file_name}.png", 'wb') as f:
+    file_path = generate_filepath(output_path, df['BETRIEBSTAG'].iloc[0], output_file_name, route)
+    with fsspec.open(file_path, 'wb') as f:
         f.write(img_data.getbuffer())
+    return file_path
 
-    return f"{output_path}/route {route}/{year}/{month}_{output_file_name}.png"
+
+def generate_filepath(path, timestamp, file_name, route):
+    year = timestamp.strftime('%Y')
+    year_month = timestamp.strftime('%Y-%m')
+    return f"{path}/route-{route}/{year}/{year_month}_route-{route}_{file_name}.png"
