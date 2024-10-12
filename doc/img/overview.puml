@@ -1,4 +1,4 @@
-@startuml Hello World
+@startuml
 !$AWS_DARK = true
 
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v18.0/dist
@@ -13,6 +13,10 @@
 
 title "Overview"
 left to right direction
+
+skinparam ArrowThickness 4
+skinparam DefaultFontSize 20
+skinparam TitleFontSize 30
 
 Servers(opentransportdata, "opentransportdata", "actual data")
 
